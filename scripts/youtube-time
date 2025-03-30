@@ -6,3 +6,31 @@
 # The above command should create a output file which contains the video from 2 min to 4 min.
 #
 # Refer: youtube-dl and ffmpeg commands for this
+if [[ $# -ne 4 ]]; then
+  printf "Usage: %s <start_time> <end_time> <output_file> <youtube_url>\n" "$0"
+  exit 1
+fi
+
+start_time="$1"
+end_time="$2"
+output_file="$3"
+youtube_url="$4"
+
+temp_pattern="temp_video.%(ext)s"
+
+printf "# Downloading full video from: %s\n" "$youtube_url"
+yt-dlp -o "$temp_pattern" "$youtube_url"
+
+downloaded_file=$(find . -name "temp_video.*" 2>/dev/null | head -n 1)
+
+if [[ -z "$downloaded_file" ]]; then
+  printf "Error: Cannot find downloaded files.\n"
+  exit 1
+fi
+
+printf "Trimming video from %s to %s and saving to %s\n" "$start_time" "$end_time" "$output_file"
+ffmpeg -y -i "$downloaded_file" -ss "$start_time" -to "$end_time" -c copy "$output_file"
+
+rm -v "$downloaded_file"
+
+printf "Finished: Output file created -> %s\n" "$output_file"
